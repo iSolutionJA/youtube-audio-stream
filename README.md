@@ -51,6 +51,7 @@ Here is an example that creates an express server with one route and streams the
 
 ```js
 const express = require('express');
+const youtubeAudioStream = require('@isolution/youtube-audio-stream');
 const app = express();
 const port = 3000;
 
@@ -60,7 +61,7 @@ app.get('/:videoId', (req, res) => {
   streamPromise
     .then((stream) => {
       stream.on('error', (err) => {
-        console.log(`err:${err}`);
+        console.log(err);
       });
       stream.pipe(res);
     })
@@ -93,7 +94,7 @@ docker build --rm -f "Dockerfile" -t youtube-audio-stream:latest .
 To run the test:
 
 ```docker
-docker run --restart=on-failure:3 -d -p 3000:3000/tcp  youtube-audio-stream:latest
+docker run --restart=on-failure:3 -p 3000:3000/tcp  youtube-audio-stream:latest
 ```
 
 ## Issues
