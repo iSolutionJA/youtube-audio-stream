@@ -28,7 +28,7 @@ const streamPromise = youtubeAudioStream(requestUrl, {bitrate: 192, startTime: 3
 
 ## Description
 
-To get the youtube video's download stream, the modules uses [ytdl-core](https://github.com/fent/node-ytdl-core).
+To get the youtube video's download stream, the module uses [ytdl-core](https://github.com/fent/node-ytdl-core).
 
 To convert to audio, the module uses [fluent-ffmpeg](https://github.com/schaermu/node-fluent-ffmpeg).
 
@@ -54,7 +54,7 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-app.get('/:videoId', async (req, res) => {
+app.get('/:videoId', (req, res) => {
   const requestUrl = `http://youtube.com/watch?v=${req.params.videoId}`;
   const streamPromise = youtubeAudioStream(requestUrl);
   streamPromise

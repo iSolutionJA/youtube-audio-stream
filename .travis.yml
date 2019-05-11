@@ -6,4 +6,4 @@ deploy:
   email: $EMAIL
   api_key: $API_KEY
 on:
-  branch: master
+  tags: true
