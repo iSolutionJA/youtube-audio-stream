@@ -1,14 +1,13 @@
-FROM node:8.10.0-alpine
-RUN apk update && apk add ffmpeg && rm -rf /var/cache/apk/*
+# Install node on alpine linux
+FROM node:10.15-alpine
 
-RUN mkdir /app
-COPY package.json /app
-COPY package-lock.json /app
-COPY index.js /app
-COPY test /app/test
+# Install ffmpeg
+RUN apk update && apk add --no-cache ffmpeg
 
-WORKDIR "/app"
-
-RUN npm install
-
-CMD npm test
+# Install package and run example
+WORKDIR /usr/src/app
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm install && mv node_modules ../
+COPY . .
+EXPOSE 3000
+CMD npm run example
