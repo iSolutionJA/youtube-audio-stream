@@ -1,20 +1,15 @@
 {
-  "name": "youtube-audio-stream",
+  "name": "@isolution/youtube-audio-stream",
   "description": "youtube-audio-stream",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/jameskyburz/youtube-audio-stream.git"
+    "url": "https://github.com/iSolutionJA/youtube-audio-stream.git"
   },
   "main": "index.js",
   "types": "index.d.ts",
-  "bin": "index.js",
-  "files": [
-    "index.js"
-  ],
   "scripts": {
-    "test": "cat ./test/video.js | npx indexhtmlify > ./test/server.html && node ./test/server.js",
-    "prepublish": "npx standard"
+    "example": "cd example && node server.js"
   },
   "keywords": [
     "audio",
@@ -23,11 +18,10 @@
     "streaming"
   ],
   "dependencies": {
-    "fluent-ffmpeg": "2.1.2",
+    "fluent-ffmpeg": "^2.1.2",
     "ytdl-core": "^0.29.1"
   },
   "devDependencies": {
-    "@types/node": "10.12.18",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.17.2"
