@@ -1,1 +1,4 @@
 Dockerfile
+.dockerignore
+.eslintrc.json
+.travis.yml
