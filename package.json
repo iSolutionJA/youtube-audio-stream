@@ -1,6 +1,6 @@
 {
   "name": "@isolution/youtube-audio-stream",
-  "description": "youtube-audio-stream",
+  "description": "Download/Stream youtube videos/livestreams as audio only",
   "version": "1.0.0",
   "repository": {
     "type": "git",
