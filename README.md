@@ -16,8 +16,8 @@ This packaged was originally created by James Kyburz and the repo can be found h
 - The example now accepts an arbitrary videoId.
 - Update Dockerfile to use Node version 10 and ffmpeg version 4
 - Two new options:
-  - `Bitrate` - the bitrate ffmpeg must use to convert the audio stream to. Defaults to `128`. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#audiobitratebitrate-set-audio-bitrate) for possible values.
-  - `Start time` - the time the video should begin. Does not apply to live streams. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#seekinputtime-set-input-start-time) for possible values.
+  - `bitrate` - the bitrate ffmpeg must use to convert the audio stream to. Defaults to `128`. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#audiobitratebitrate-set-audio-bitrate) for possible values.
+  - `startTime` - the time the video should begin. Does not apply to live streams. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#seekinputtime-set-input-start-time) for possible values.
 
 New options example:
 
