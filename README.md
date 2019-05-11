@@ -1,65 +1,101 @@
 # youtube-audio-stream
 
-[![js-standard-style](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/feross/standard)
-[![Greenkeeper badge](https://badges.greenkeeper.io/JamesKyburz/youtube-audio-stream.svg)](https://greenkeeper.io/)
+[![code-style](https://img.shields.io/badge/code_style-airbnb--base-brightgreen.svg)](https://github.com/airbnb/javascript)
 
-This module streams youtube using [ytdl](https://github.com/fent/node-ytdl) to get the youtube download stream.
+## Credit
 
-To convert to audio the module [fluent-ffmpeg](https://github.com/schaermu/node-fluent-ffmpeg) is used.
+This packaged was originally created by James Kyburz and the repo can be found here: [https://github.com/JamesKyburz/youtube-audio-stream](https://github.com/JamesKyburz/youtube-audio-stream)
 
-You will need to have [ffmpeg](http://www.ffmpeg.org/) and the necessary encoding libraries installed, as well as in your PATH. If you're on OSX, this can be handled easily using [Homebrew](http://brew.sh/) (`brew install ffmpeg`).
+## Improvements
 
-## Getting Started
+- Returns a promise instead of a stream. Promise when resolved returns:
+  - the stream
+  - the [fluent-ffmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg) instance
+  - the info from [ytdl-core](https://github.com/fent/node-ytdl-core). See [here](https://github.com/fent/node-ytdl-core/blob/master/example/info.json) for what it contains
+- Livestreams are now supported
+- The example now accepts an arbitrary videoId.
+- Update Dockerfile to use Node version 10 and ffmpeg version 4
+- Two new options:
+  - `Bitrate` - the bitrate ffmpeg must use to convert the audio stream to. Defaults to `128`. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#audiobitratebitrate-set-audio-bitrate) for possible values.
+  - `Start time` - the time the video should begin. Does not apply to live streams. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#seekinputtime-set-input-start-time) for possible values.
 
-1. With [npm](http://npmjs.org), run `npm install youtube-audio-stream`
-2. `var youtubeStream = require('youtube-audio-stream')`
+New options example:
+
+```js
+// Encode audio at a 192 bitrate and start the audio 30 seconds in
+const streamPromise = youtubeAudioStream(requestUrl, {bitrate: 192, startTime: 30});
+```
+
+## Description
+
+To get the youtube video's download stream, the modules uses [ytdl-core](https://github.com/fent/node-ytdl-core).
+
+To convert to audio, the module uses [fluent-ffmpeg](https://github.com/schaermu/node-fluent-ffmpeg).
+
+You will need to have [ffmpeg](https://www.ffmpeg.org/) and the necessary encoding libraries and ffmpeg needs to be in the OS's PATH. If you're on OSX, this can be handled easily using [Homebrew](https://brew.sh/) (`brew install ffmpeg`). Otherwise visit [https://github.com/adaptlearning/adapt_authoring/wiki/Installing-FFmpeg](https://github.com/adaptlearning/adapt_authoring/wiki/Installing-FFmpeg)
+
+## Installation
+
+Via npm:
+
+```bash
+npm install @isolution/youtube-audio-stream
+```
 
 ## Usage
 
-Here is an example that:
+Here is an example that creates an express server with one route and streams the audio to the response. To hear the audio for a specific video:
 
-1. queries for a video by video ID
-2. Retrieves the audio via this package
-3. pipes it to `res`
+1. Get a videoId
+2. Go to `localhost:3000/:videoId`
 
 ```js
-var getAudio = function (req, res) {
-  var requestUrl = 'http://youtube.com/watch?v=' + req.params.videoId
-  try {
-    youtubeStream(requestUrl).pipe(res)
-  } catch (exception) {
-    res.status(500).send(exception)
-  }
-}
-```
+const express = require('express');
+const app = express();
+const port = 3000;
 
-## Node example playing directly to speaker
-```js
-const stream = require('youtube-audio-stream')
-const url = 'http://youtube.com/watch?v=34aQNMvGEZQ'
-const decoder = require('lame').Decoder
-const speaker = require('speaker')
+app.get('/:videoId', async (req, res) => {
+  const requestUrl = `http://youtube.com/watch?v=${req.params.videoId}`;
+  const streamPromise = youtubeAudioStream(requestUrl);
+  streamPromise
+    .then((stream) => {
+      stream.on('error', (err) => {
+        console.log(`err:${err}`);
+      });
+      stream.pipe(res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
 
-stream(url)
-.pipe(decoder())
-.pipe(speaker())
+app.listen(port, () => {
+  console.log(`Server started on ${port}`);
+});
 ```
 
 ## Testing
 
-This package comes with a simple example for testing. This can be run with the command `npm test`, which will then serve the example at `localhost:3000`. The example consists of an `<audio>` component whose source is retrieved via this package.
+### Testing locally
+
+This package comes with a simple example for testing. This can be run with the command `npm run example`, which will start a basic http server that serves two routes, first one sends an html file to `localhost:3000/` and the second one streams audio to the response using this package.
 
 ### Testing inside a docker container
 
-You can test this module without the need o have [ffmeg](http://www.ffmpeg.org/) locally installed
-doing it inside a container.
+You can test this module without the need to have [ffmpeg](https://www.ffmpeg.org/) locally installed by doing it inside a docker container.
 
-To build the Docker image:
-```
-docker build . -t youtube-audio-stream-test
+To build the docker image:
+
+```docker
+docker build --rm -f "Dockerfile" -t youtube-audio-stream:latest .
 ```
 
 To run the test:
+
+```docker
+docker run --rm -d -p --restart on-failure:3 3000:3000/tcp youtube-audio-stream:latest
 ```
-docker run --rm -it -p 3000:3000 youtube-audio-stream-test
-```
+
+## Issues
+
+There is currently an issue on certain videos where it returns a 403 unauthorized code which causes the package to essentially crash. See [#417](https://github.com/fent/node-ytdl-core/issues/417)
