@@ -15,40 +15,71 @@ function streamify(uri, opt) {
     },
   };
 
-  const video = ytdl(uri, options);
+  const ytdlPromise = ytdl
+    .getInfo(uri)
+    .then((info) => {
+      const isLive = info.player_response.videoDetails.isLiveContent;
+      let streamSource;
+      if (isLive) {
+        streamSource = ytdl.chooseFormat(info.formats, {
+          quality: 'highestaudio',
+        }).url;
+      } else {
+        streamSource = ytdl.downloadFromInfo(info, options);
+      }
 
-  const { file, audioFormat, bitrate } = options;
-  const stream = file ? fs.createWriteStream(file) : new PassThrough();
-  const audioBitrate = bitrate || 128;
-  const ffmpeg = new FFmpeg(video);
+      streamSource.isLive = isLive;
+      streamSource.info = info;
 
-  process.nextTick(() => {
-    const output = ffmpeg
-      .audioCodec('libmp3lame')
-      .audioBitrate(audioBitrate)
-      .format(audioFormat)
-      .pipe(stream);
+      return streamSource;
+    })
+    .catch(err => err);
 
-    ffmpeg.on('error', (error) => {
-      stream.emit('error', error);
-    });
+  const streamPromise = ytdlPromise
+    .then((streamSource) => {
+      const { isLive } = streamSource;
+      const {
+        file, audioFormat, bitrate, startTime,
+      } = options;
+      const stream = file ? fs.createWriteStream(file) : new PassThrough();
+      const audioBitrate = bitrate || 128;
+      const audioStartTime = startTime;
+      const ffmpeg = new FFmpeg(streamSource);
 
-    output.on('error', (error) => {
-      video.end();
-      stream.emit('error', error);
-    });
-  });
+      process.nextTick(() => {
+        const output = ffmpeg.audioCodec('libmp3lame');
+        // Disable setStartTime for livestreams
+        if (!isLive) {
+          output.setStartTime(audioStartTime);
+        }
+        output
+          .audioBitrate(audioBitrate)
+          .format(audioFormat)
+          .pipe(stream);
 
-  stream.video = video;
-  stream.ffmpeg = ffmpeg;
+        // Error Emitters
+        ffmpeg.on('error', (error) => {
+          stream.emit('error', error);
+        });
 
-  return stream;
+        output.on('error', (error) => {
+          // If it is NOT a livestream url, it must be a readable stream
+          // which can be stopped when an error occurs
+          if (!isLive) {
+            streamSource.end();
+          }
+          stream.emit('error', error);
+        });
+      });
+
+      stream.info = streamSource.info;
+      stream.ffmpeg = ffmpeg;
+
+      return stream;
+    })
+    .catch(err => err);
+
+  return streamPromise;
 }
 
-if (!module.parent) {
-  const youtubeUrl = process.argv.slice(2)[0];
-  if (!youtubeUrl) throw new TypeError('youtube url not specified');
-  streamify(youtubeUrl).pipe(process.stdout);
-} else {
-  module.exports = streamify;
-}
+module.exports = streamify;

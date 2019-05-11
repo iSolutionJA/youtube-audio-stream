@@ -93,7 +93,7 @@ docker build --rm -f "Dockerfile" -t youtube-audio-stream:latest .
 To run the test:
 
 ```docker
-docker run --rm -d -p --restart on-failure:3 3000:3000/tcp youtube-audio-stream:latest
+docker run --restart=on-failure:3 -d -p 3000:3000/tcp  youtube-audio-stream:latest
 ```
 
 ## Issues
