@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const ytdl = require('ytdl-core');
 const FFmpeg = require('fluent-ffmpeg');
 const { PassThrough } = require('stream');
@@ -48,8 +47,8 @@ function streamify(uri, opt) {
 
       process.nextTick(() => {
         const output = ffmpeg.audioCodec('libmp3lame');
-        // Disable setStartTime for livestreams
-        if (!isLive) {
+        // Disable for undefined and livestreams
+        if (audioStartTime && !isLive) {
           output.setStartTime(audioStartTime);
         }
         output
