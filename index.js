@@ -73,6 +73,7 @@ function streamify(uri, opt) {
 
       stream.info = streamSource.info;
       stream.ffmpeg = ffmpeg;
+      stream.isLive = isLive;
 
       return stream;
     })
