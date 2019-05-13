@@ -32,7 +32,9 @@ function streamify(uri, opt) {
 
       return streamSource;
     })
-    .catch(err => err);
+    .catch((err) => {
+      throw err;
+    });
 
   const streamPromise = ytdlPromise
     .then((streamSource) => {
@@ -77,7 +79,9 @@ function streamify(uri, opt) {
 
       return stream;
     })
-    .catch(err => err);
+    .catch((err) => {
+      throw err;
+    });
 
   return streamPromise;
 }
