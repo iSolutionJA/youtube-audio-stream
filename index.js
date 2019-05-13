@@ -48,12 +48,12 @@ function streamify(uri, opt) {
       const ffmpeg = new FFmpeg(streamSource);
 
       process.nextTick(() => {
-        const output = ffmpeg.audioCodec('libmp3lame');
+        let output = ffmpeg.audioCodec('libmp3lame');
         // Disable for undefined and livestreams
         if (audioStartTime && !isLive) {
           output.setStartTime(audioStartTime);
         }
-        output
+        output = output
           .audioBitrate(audioBitrate)
           .format(audioFormat)
           .pipe(stream);
