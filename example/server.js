@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
     const streamPromise = youtubeAudioStream(requestUrl);
     streamPromise
       .then((stream) => {
-        stream.on('error', (err) => {
+        stream.emitter.on('error', (err) => {
           console.log(err);
         });
         stream.pipe(res);
