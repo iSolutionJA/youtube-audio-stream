@@ -1,7 +1,10 @@
 const ytdl = require('ytdl-core');
 const FFmpeg = require('fluent-ffmpeg');
 const { PassThrough } = require('stream');
+const events = require('events');
 const fs = require('fs');
+
+const streamEmitter = new events.EventEmitter();
 
 function streamify(uri, opt) {
   const options = {
@@ -14,7 +17,7 @@ function streamify(uri, opt) {
     },
   };
 
-  const ytdlPromise = ytdl
+  const streamPromise = ytdl
     .getInfo(uri)
     .then((info) => {
       const isLive = info.player_response.videoDetails.isLiveContent;
@@ -32,11 +35,6 @@ function streamify(uri, opt) {
 
       return streamSource;
     })
-    .catch((err) => {
-      throw err;
-    });
-
-  const streamPromise = ytdlPromise
     .then((streamSource) => {
       const { isLive } = streamSource;
       const {
@@ -47,35 +45,43 @@ function streamify(uri, opt) {
       const audioStartTime = startTime;
       const ffmpeg = new FFmpeg(streamSource);
 
-      process.nextTick(() => {
-        let output = ffmpeg.audioCodec('libmp3lame');
-        // Disable for undefined and livestreams
-        if (audioStartTime && !isLive) {
-          output.setStartTime(audioStartTime);
-        }
-        output = output
-          .audioBitrate(audioBitrate)
-          .format(audioFormat)
-          .pipe(stream);
+      let output = ffmpeg.audioCodec('libmp3lame');
+      // Disable for undefined and livestreams
+      if (audioStartTime && !isLive) {
+        output.setStartTime(audioStartTime);
+      }
+      output = output
+        .audioBitrate(audioBitrate)
+        .format(audioFormat)
+        .pipe(stream);
 
-        // Error Emitters
-        ffmpeg.on('error', (error) => {
-          stream.emit('error', error);
+      // Error Emitters
+      // If it is NOT a livestream url, it has event listeners
+      if (!isLive) {
+        streamSource.on('error', (error) => {
+          streamEmitter.emit('error', error);
         });
+      }
 
-        output.on('error', (error) => {
-          // If it is NOT a livestream url, it must be a readable stream
-          // which can be stopped when an error occurs
-          if (!isLive) {
-            streamSource.end();
-          }
-          stream.emit('error', error);
-        });
+      ffmpeg.on('error', (error) => {
+        streamEmitter.emit('error', error);
       });
 
+      output.on('error', (error) => {
+        // If it is NOT a livestream url, it must be a readable stream
+        // which can be stopped when an error occurs
+        if (!isLive) {
+          streamSource.end();
+        }
+
+        streamEmitter.emit('error', error);
+      });
+
+      stream.source = streamSource;
       stream.info = streamSource.info;
       stream.ffmpeg = ffmpeg;
       stream.isLive = isLive;
+      stream.emitter = streamEmitter;
 
       return stream;
     })
