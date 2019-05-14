@@ -106,7 +106,3 @@ To run the test:
 ```docker
 docker run --restart=on-failure:5 -p 3000:3000/tcp  youtube-audio-stream:latest
 ```
-
-## Issues
-
-There is currently an issue on certain videos where it returns a 403 unauthorized code which causes the package to essentially crash. See [#417](https://github.com/fent/node-ytdl-core/issues/417)
