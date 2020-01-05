@@ -9,25 +9,25 @@ const streamEmitter = new events.EventEmitter();
 function streamify(uri, opt) {
   const options = {
     ...opt,
-    videoFormat: 'mp4',
-    quality: 'lowest',
-    audioFormat: 'mp3',
-    filter(format) {
-      return format.container === options.videoFormat && format.audioEncoding;
-    },
+    quality: 'highestaudio',
+    audioFormat: 'mp3'
   };
 
   const streamPromise = ytdl
     .getInfo(uri)
-    .then((info) => {
+    .then(info => {
       const isLive = info.player_response.videoDetails.isLiveContent;
-      let streamSource;
+
+      const streamSource = { isLive, info: {}, source: '' };
+
       if (isLive) {
-        streamSource = ytdl.chooseFormat(info.formats, {
-          quality: 'highestaudio',
+        // source is the m3u8 url
+        streamSource.source = ytdl.chooseFormat(info.formats, {
+          quality: 'highestaudio'
         }).url;
       } else {
-        streamSource = ytdl.downloadFromInfo(info, options);
+        // source is the Readable stream
+        streamSource.source = ytdl.downloadFromInfo(info, options);
       }
 
       streamSource.isLive = isLive;
@@ -35,22 +35,23 @@ function streamify(uri, opt) {
 
       return streamSource;
     })
-    .then((streamSource) => {
-      const { isLive } = streamSource;
-      const {
-        file, audioFormat, bitrate, startTime,
-      } = options;
-      const stream = file ? fs.createWriteStream(file) : new PassThrough();
-      const audioBitrate = bitrate || 128;
-      const audioStartTime = startTime;
-      const ffmpeg = new FFmpeg(streamSource);
+    .then(streamObj => {
+      const { isLive } = streamObj;
 
-      let output = ffmpeg.audioCodec('libmp3lame');
+      const { file, audioFormat, bitrate, startTime } = options;
+      const stream = file ? fs.createWriteStream(file) : new PassThrough();
+      const audioBitrate = bitrate || 128; // default bitrate is 128 if one was not passed
+
+      const ffmpeg = new FFmpeg(streamObj.source);
+
       // Disable for undefined and livestreams
-      if (audioStartTime && !isLive) {
-        output.setStartTime(audioStartTime);
+      if (startTime && !isLive) {
+        ffmpeg.setStartTime(startTime);
       }
-      output = output
+
+      // convert audio and start writing to stream
+      ffmpeg
+        .audioCodec('libmp3lame')
         .audioBitrate(audioBitrate)
         .format(audioFormat)
         .pipe(stream);
@@ -58,34 +59,30 @@ function streamify(uri, opt) {
       // Error Emitters
       // If it is NOT a livestream url, it has event listeners
       if (!isLive) {
-        streamSource.on('error', (error) => {
+        streamObj.source.on('error', error => {
           streamEmitter.emit('error', error);
         });
       }
 
-      ffmpeg.on('error', (error) => {
-        streamEmitter.emit('error', error);
-      });
-
-      output.on('error', (error) => {
-        // If it is NOT a livestream url, it must be a readable stream
-        // which can be stopped when an error occurs
+      ffmpeg.on('error', error => {
         if (!isLive) {
-          streamSource.end();
+          streamObj.source.end();
         }
 
+        // If it is NOT a livestream url, it must be a readable stream
+        // which can be stopped when an error occurs
         streamEmitter.emit('error', error);
       });
 
-      stream.source = streamSource;
-      stream.info = streamSource.info;
+      // stream.source = streamObj;
+      stream.info = streamObj.info;
       stream.ffmpeg = ffmpeg;
       stream.isLive = isLive;
       stream.emitter = streamEmitter;
 
       return stream;
     })
-    .catch((err) => {
+    .catch(err => {
       throw err;
     });
 

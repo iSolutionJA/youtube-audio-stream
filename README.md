@@ -20,13 +20,13 @@ This packaged was originally created by James Kyburz and the repo can be found h
 - Updated Dockerfile that uses Node version 10 and ffmpeg version 4
 - Two new options:
   - `bitrate` - the bitrate ffmpeg must use to convert the audio stream to. Defaults to `128`. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#audiobitratebitrate-set-audio-bitrate) for possible values.
-  - `startTime` - the time the video should begin. Does not apply to live streams. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#seekinputtime-set-input-start-time) for possible values.
+  - `startTime` - the time the video should begin. Does **not** apply to live streams. See [here](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg#seekinputtime-set-input-start-time) for possible values.
 
 New options example:
 
 ```js
 // Encode audio at a 192 bitrate and start the audio 30 seconds in
-const streamPromise = youtubeAudioStream(uri, {bitrate: 192, startTime: 30});
+const streamPromise = youtubeAudioStream(uri, { bitrate: 192, startTime: 30 });
 ```
 
 ## Description
@@ -50,7 +50,7 @@ npm install @isolution/youtube-audio-stream
 Here is an example that creates an express server with one route and streams the audio to the response. To hear the audio for a specific video:
 
 1. Get a videoId
-2. Go to `localhost:3000/:videoId`
+2. Go to `http://localhost:3000/:videoId`
 
 ```js
 const express = require('express');
@@ -62,13 +62,13 @@ app.get('/:videoId', (req, res) => {
   const requestUrl = `http://youtube.com/watch?v=${req.params.videoId}`;
   const streamPromise = youtubeAudioStream(requestUrl);
   streamPromise
-    .then((stream) => {
-      stream.emitter.on('error', (err) => {
+    .then(stream => {
+      stream.emitter.on('error', err => {
         console.log(err);
       });
       stream.pipe(res);
     })
-    .catch((err) => {
+    .catch(err => {
       console.log(err);
     });
 });
@@ -89,7 +89,9 @@ There are two places where you need to handle errors. They are:
 
 ### Testing locally
 
-This package comes with a simple example for testing. This can be run with the command `npm run example`, which will start a basic http server that serves two routes, first one sends an html file to `localhost:3000/` and the second one streams audio to the response using this package.
+This package comes with a simple example for testing. This can be run with the command `npm run example`, which will start a basic http server that serves two routes, first one sends an html file to `http://localhost:3000/` and the second one streams audio to the response using this package.
+
+Note: After selecting "OK", the play button has to be clicked for audio to start playing because most browsers disable autoplay.
 
 ### Testing inside a docker container
 

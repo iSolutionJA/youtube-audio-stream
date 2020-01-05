@@ -13,7 +13,7 @@ const server = http.createServer((req, res) => {
       }
       res.writeHead(200, {
         'Content-Type': 'text/html',
-        'Content-Length': data.length,
+        'Content-Length': data.length
       });
       res.write(data);
       res.end();
@@ -27,18 +27,18 @@ const server = http.createServer((req, res) => {
     const requestUrl = `http://youtube.com/watch?v=${videoId}`;
     const streamPromise = youtubeAudioStream(requestUrl);
     streamPromise
-      .then((stream) => {
-        stream.emitter.on('error', (err) => {
+      .then(stream => {
+        stream.emitter.on('error', err => {
           console.log(err);
         });
         stream.pipe(res);
       })
-      .catch((err) => {
+      .catch(err => {
         console.log(err);
       });
   }
 });
 
 server.listen(port, () => {
-  console.log('Go to localhost:3000/');
+  console.log('Go to http://localhost:3000/');
 });
